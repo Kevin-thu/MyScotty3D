@@ -360,16 +360,43 @@ void Pipeline<p, P, flags>::rasterize_line(
 	// TODO: Check out the block comment above this function for more information on how to fill in
 	// this function!
 	// The OpenGL specification section 3.5 may also come in handy.
-
-	{ // As a placeholder, draw a point in the middle of the line:
-		//(remove this code once you have a real implementation)
-		Fragment mid;
-		mid.fb_position = (va.fb_position + vb.fb_position) / 2.0f;
-		mid.attributes = va.attributes;
-		mid.derivatives.fill(Vec2(0.0f, 0.0f));
-		emit_fragment(mid);
+	Vec3 a = va.fb_position, b = vb.fb_position;
+	float dx = std::abs(a.x - b.x), dy = std::abs(a.y - b.y);
+	int i, j;
+	if (dx > dy) {
+		i = 0; j = 1;
+	} else {
+		i = 1; j = 0;
+	}
+	if (a[i] > b[i]) {
+		std::swap(a, b);
 	}
 
+	// TODO: fix t0 and t1 to properly account for OR discard the two edge fragments if the endpoints 𝑎 and 𝑏 are inside the ‘diamond’ of the edge fragments
+	// float t0 = floor(a[i]), t1 = floor(b[i]);
+	// Calculate the initial integer coordinates of the endpoints along the primary axis (i)
+	float t0 = std::floor(a[i] + 0.5f);
+	float t1 = std::floor(b[i] + 0.5f);
+	// Adjust t0 and t1 to account for the diamond rule
+	if (a[i] == std::floor(a[i]) && std::floor(a[j] + 0.5f) == a[j]) {
+		// va is exactly on the diamond's edge, move it inside the diamond
+		t0 -= 1.0f;
+	}
+	if (b[i] == std::floor(b[i]) && std::floor(b[j] + 0.5f) == b[j]) {
+		// vb is exactly on the diamond's edge, move it inside the diamond
+		t1 -= 1.0f;
+	}
+
+	for (float u = t0; u <= t1; u += 1.0f) {
+		float w = ((u + 0.5f) - a[i]) / (b[i] - a[i]);
+		float v = w * (b[j] - a[j]) + a[j];
+
+		Fragment frag;
+		frag.fb_position = Vec3(std::floor(u) + 0.5, std::floor(v) + 0.5, (1 - w) * a[2] + w * b[2]);
+		frag.attributes = va.attributes;
+		frag.derivatives.fill(Vec2(0.0f, 0.0f));
+		emit_fragment(frag);
+	}
 }
 
 /*
