@@ -32,11 +32,33 @@ PT::Trace Sphere::hit(Ray ray) const {
 
     PT::Trace ret;
     ret.origin = ray.point;
-    ret.hit = false;       // was there an intersection?
-    ret.distance = 0.0f;   // at what distance did the intersection occur?
-    ret.position = Vec3{}; // where was the intersection?
-    ret.normal = Vec3{};   // what was the surface normal at the intersection?
-	ret.uv = Vec2{}; 	   // what was the uv coordinates at the intersection? (you may find Sphere::uv to be useful)
+	float det = 4 * pow(dot(ray.point, ray.dir), 2) - 4 * ray.dir.norm_squared() * (ray.point.norm_squared() - radius * radius);
+	if (det < 0) {
+		ret.hit = false;
+		return ret;
+	}
+	float t1 = (-2 * dot(ray.point, ray.dir) - sqrt(det)) / (2 * ray.dir.norm_squared());
+	float t2 = (-2 * dot(ray.point, ray.dir) + sqrt(det)) / (2 * ray.dir.norm_squared());
+	if (ray.dist_bounds.x <= t1) {
+		if (ray.dist_bounds.y < t1) {
+			ret.hit = false;
+			return ret;
+		}
+		ret.distance = t1;
+		ret.position = ray.at(t1);
+		ret.normal = ret.position.unit(); // normal向量应该做归一化
+		ret.uv = uv(ret.position);
+	} else {
+		if (ray.dist_bounds.y < t2 || ray.dist_bounds.x > t2) {
+			ret.hit = false;
+			return ret;
+		}
+		ret.distance = t2;
+		ret.position = ray.at(t2);
+		ret.normal = ret.position.unit();
+		ret.uv = uv(ret.position);
+	}
+	ret.hit = true;
     return ret;
 }
 

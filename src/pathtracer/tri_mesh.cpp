@@ -26,23 +26,33 @@ Trace Triangle::hit(const Ray& ray) const {
     Tri_Mesh_Vert v_0 = vertex_list[v0];
     Tri_Mesh_Vert v_1 = vertex_list[v1];
     Tri_Mesh_Vert v_2 = vertex_list[v2];
-    (void)v_0;
-    (void)v_1;
-    (void)v_2;
+	Trace ret;
+	ret.origin = ray.point;
 
-    // TODO (PathTracer): Task 2
+	// TODO (PathTracer): Task 2
     // Intersect the ray with the triangle defined by the three vertices.
+	Vec3 s = ray.point - v_0.position;
+	Vec3 e1 = v_1.position - v_0.position;
+	Vec3 e2 = v_2.position - v_0.position;
+	float denominator = dot(cross(e1, ray.dir), e2);
+	if (abs(denominator) < 1e-5) {
+		ret.hit = false;
+		return ret;
+	}
+	float u = -dot(cross(s, e2), ray.dir) / denominator;
+	float v = dot(cross(e1, ray.dir), s) / denominator;
+	float t = -dot(cross(s, e2), e1) / denominator;
 
-    Trace ret;
-    ret.origin = ray.point;
-    ret.hit = false;       // was there an intersection?
-    ret.distance = 0.0f;   // at what distance did the intersection occur?
-    ret.position = Vec3{}; // where was the intersection?
-    ret.normal = Vec3{};   // what was the surface normal at the intersection?
-                           // (this should be interpolated between the three vertex normals)
-	ret.uv = Vec2{};	   // What was the uv associated with the point of intersection?
-						   // (this should be interpolated between the three vertex uvs)
-    return ret;
+	if (t < ray.dist_bounds.x || t > ray.dist_bounds.y) {
+		ret.hit = false;
+		return ret;
+	}
+	ret.hit = true;		   // was there an intersection?
+	ret.distance = t;   // at what distance did the intersection occur?
+    ret.position = ray.at(t); // where was the intersection?
+    ret.normal = (1 - u - v) * v_0.normal + u * v_1.normal + v * v_2.normal;   // what was the surface normal at the intersection?
+	ret.uv = (1 - u - v) * v_0.uv + u * v_1.uv + v * v_2.uv;	   // What was the uv associated with the point of intersection?
+	return ret;
 }
 
 Triangle::Triangle(Tri_Mesh_Vert* verts, uint32_t v0, uint32_t v1, uint32_t v2)
