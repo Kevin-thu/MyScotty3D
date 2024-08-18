@@ -14,9 +14,14 @@ BBox Triangle::bbox() const {
 
     // Beware of flat/zero-volume boxes! You may need to
     // account for that here, or later on in BBox::hit.
-
-    BBox box;
-    return box;
+	BBox box;
+	box.enclose(vertex_list[v0].position);
+	box.enclose(vertex_list[v1].position);
+	box.enclose(vertex_list[v2].position);
+	if (!Test::differs(box.min.x, box.max.x)) box.max.x = box.min.x + 0.1f;
+	if (!Test::differs(box.min.y, box.max.y)) box.max.y = box.min.y + 0.1f;
+	if (!Test::differs(box.min.z, box.max.z)) box.max.z = box.min.z + 0.1f;
+	return box;
 }
 
 Trace Triangle::hit(const Ray& ray) const {
@@ -35,7 +40,7 @@ Trace Triangle::hit(const Ray& ray) const {
 	Vec3 e1 = v_1.position - v_0.position;
 	Vec3 e2 = v_2.position - v_0.position;
 	float denominator = dot(cross(e1, ray.dir), e2);
-	if (abs(denominator) < 1e-5) {
+	if (std::abs(denominator) < 1e-5) {    // 必须用std::abs!!! 看一下返回值类型，不要偷懒！
 		ret.hit = false;
 		return ret;
 	}
@@ -47,6 +52,7 @@ Trace Triangle::hit(const Ray& ray) const {
 		ret.hit = false;
 		return ret;
 	}
+	// std::cout << "hit triangle:" << v_0.position << v_1.position << v_2.position << " " << t << std::endl;
 	ret.hit = true;		   // was there an intersection?
 	ret.distance = t;   // at what distance did the intersection occur?
     ret.position = ray.at(t); // where was the intersection?

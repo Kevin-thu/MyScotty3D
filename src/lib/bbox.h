@@ -6,6 +6,7 @@
 #include <cmath>
 #include <ostream>
 #include <vector>
+#include <iostream>
 
 #include "mat4.h"
 #include "ray.h"
@@ -86,7 +87,32 @@ struct BBox {
 		// [times.x,times.y], update times with the new intersection times.
 		// This means at least one of tmin and tmax must be within the range
 
-		return false;
+		float tmin = (min.x - ray.point.x) / ray.dir.x, tmax = (max.x - ray.point.x) / ray.dir.x;
+		if (tmin > tmax) std::swap(tmin, tmax);
+		float tymin = (min.y - ray.point.y) / ray.dir.y, tymax = (max.y - ray.point.y) / ray.dir.y;
+		if (tymin > tymax) std::swap(tymin, tymax);
+		// std::cout << "???bbox:" << tmin << " " << tmax << " " << tymin << " " << tymax;
+
+		if ((tmin > tymax) || (tmax < tymin)) 
+			return false;
+		if (tymin > tmin) tmin = tymin;
+		if (tymax < tmax) tmax = tymax;
+
+		float tzmin = (min.z - ray.point.z) / ray.dir.z, tzmax = (max.z - ray.point.z) / ray.dir.z;
+		if (tzmin > tzmax) std::swap(tzmin, tzmax);
+		// std::cout << "?" << min.z << " " << max.z << " " << ray.point.z << " " << ray.dir.z << " " << (min.z - ray.po) << tzmin << " " << tzmax;
+
+		if ((tmin > tzmax) || (tmax < tzmin))
+			return false;
+		if (tzmin > tmin) tmin = tzmin;
+		if (tzmax < tmax) tmax = tzmax;
+
+		if ((tmin > times.y) || (tmax < times.x))
+			return false;
+		if (tmin > times.x) times.x = tmin;
+		if (tmax < times.y) times.y = tmax;
+		// std::cout << " " << times.x << " " << times.y << std::endl;
+ 		return true;
 	}
 
 	/// Get the eight corner points of the bounding box

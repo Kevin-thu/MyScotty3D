@@ -19,7 +19,7 @@ struct Trace {
 
 	bool hit = false;
 
-	float distance = 0.0f;
+	float distance = FLT_MAX;
 	Vec3 position, normal, origin;
 	Vec2 uv;
 

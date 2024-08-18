@@ -3,12 +3,21 @@
 
 #include "../lib/mathlib.h"
 #include "../platform/gl.h"
+#include <iostream>
 
 #include "trace.h"
 
 struct RNG;
 
 namespace PT {
+struct SAHBucketData {
+	BBox bbox;          ///< bbox of all primitives
+	size_t num_prims = 0; ///< number of primitives in the bucket
+	void clear() {
+		bbox.reset();
+		num_prims = 0;
+	}
+};
 
 template<typename Primitive> class BVH {
 public:
@@ -25,8 +34,9 @@ public:
 	BVH() = default;
 	BVH(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
 	void build(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
+	void build_node(size_t node_id, size_t max_leaf_size = 1);
 
-	BVH(BVH&& src) = default;
+	BVH(BVH &&src) = default;
 	BVH& operator=(BVH&& src) = default;
 
 	BVH(const BVH& src) = delete;
@@ -34,6 +44,7 @@ public:
 
 	BBox bbox() const;
 	Trace hit(const Ray& ray) const;
+	void find_closest_hit(const Ray &ray, const Node *node, Trace& closest) const;
 
 	template<typename P = Primitive>
 	typename std::enable_if<std::is_copy_assignable_v<P>, BVH<P>>::type copy() const;
@@ -53,6 +64,7 @@ public:
 	size_t root_idx = 0;
 
 private:
+	size_t n_prim_per_bucket = 64;
 	size_t new_node(BBox box = {}, size_t start = 0, size_t size = 0, size_t l = 0, size_t r = 0);
 };
 
